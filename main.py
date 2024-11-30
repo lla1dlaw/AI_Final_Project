@@ -4,9 +4,8 @@
 # Description: The main driver program for the classifier
 
 import torch
-import torchaudio
+#import torchaudio
 from network import Network
-print(torch.__version__ +" " + torchaudio.__version__)
 
 
 def parse_wave_data(path: str):
@@ -30,17 +29,43 @@ def parse_wave_data(path: str):
     return data
 
 
+def parse_csv_data(path: str):
+    data = []
+
+    with open(path, "r") as file:
+        file.readline()
+        for line in file: 
+            line = line.strip().split(",")
+            features = map(float, line[:-1])
+            label = line[-1]
+            data.append((torch.tensor(features), label))
+
 def main():
     num_linear_layers = 0
     linear_width = 0
     in_size = 0
     out_size = 0 
 
+    genre_map = {
+        0 : "blues", 
+        1 : "classical", 
+        2 : "country", 
+        3 : "disco", 
+        4 : "hiphop", 
+        5 : "jazz", 
+        6 : "metal", 
+        7 : "pop", 
+        8 : "reggae", 
+        9 : "rock"
+    }
+
     print("Creating linear network")
     linear_net = Network(num_linear_layers, linear_width, in_size, out_size)
 
-    waveform_data = parse_wave_data("./GTZAN/genres_original")
-    print(waveform_data)
+    # waveform_data = parse_wave_data("./GTZAN/genres_original")
+    # print(waveform_data)
+    csv_data = parse_csv_data("GTZAN/")
+    
 
 
 if __name__ == '__main__':
