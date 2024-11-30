@@ -1,12 +1,13 @@
 # Filename: network.py
 # Author: Liam Laidlaw
 # Created: 11-25-2024
-# Description: Full feedforward linear network with no convolutions or recurrent structures involved
+# Description: Full feedforward linear network with no convolutions or recurrent structures involved. 
 
 
 from torch import nn
+print(torch.__version__)
 
-class Network(nn.module):
+class Network(nn.Module):
     def __init__(self, num_linear_layers: int, hidden_size: int, in_size: int, out_size: int):
         super().__init__()
         # only linear layers
