@@ -1,19 +1,18 @@
 # Filename: network.py
 # Author: Liam Laidlaw
-# Created: 11-25-2024
-# Description: Full feedforward linear network with no convolutions or recurrent structures involved. 
-
+# Created: 11-04-2024
+# Description: Class defining a pytorch network
 
 from torch import nn
-print(torch.__version__)
 
 class Network(nn.Module):
-    def __init__(self, num_linear_layers: int, hidden_size: int, in_size: int, out_size: int):
+
+    def __init__(self, layers: int, hidden_size: int, in_size: int, out_size: int):
         super().__init__()
-        # only linear layers
         self.linear = [nn.Linear(in_size, hidden_size)]
-        self.linear.extend([nn.Linear(hidden_size, hidden_size) for _ in range(num_linear_layers)])
+        self.linear.extend([nn.Linear(hidden_size, hidden_size) for i in range(layers)])
         self.linear.append(nn.Linear(hidden_size, out_size))
+        self.linear = nn.ModuleList(self.linear)
         self.activation = nn.ReLU()
 
     def forward(self, x):
@@ -21,4 +20,3 @@ class Network(nn.Module):
             x = layer(x)
             x = self.activation(x)
         return x
-        
