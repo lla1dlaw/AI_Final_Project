@@ -6,7 +6,9 @@
 import random
 import time
 import torch
+
 #import torchaudio
+from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 from network import Network
 
@@ -71,7 +73,9 @@ def train_network(net: torch.nn.Module, data: list[tuple[torch.Tensor, int, str]
 
     loader = DataLoader(data_no_filenames, batch_size=batch_size, shuffle=True)
     loss_fn = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(net.parameters(), lr=0.0001)
+    optimizer = torch.optim.SGD(net.parameters(), lr=0.01)
+    scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.9999)
+
     net.train()
     for epoch in range(epochs):
         global_loss = 0
@@ -84,11 +88,13 @@ def train_network(net: torch.nn.Module, data: list[tuple[torch.Tensor, int, str]
             loss.backward()
             optimizer.step()
             optimizer.zero_grad() # zero all the weight gradients in preparation for the next batch
-            # Computer global loss
+            
+            # Compute global loss
             global_loss += loss.item()
             # Compute epoch accuracy
             pred = torch.argmax(pred, dim=1)
             correct += torch.sum(target == pred).item()
+            scheduler.step()
         print(f"epoch: {epoch} -> loss: {round(global_loss, 6)} -> acc: {correct} of {len(data_no_filenames)} -> {round(correct/len(data_no_filenames)*100, 3)}%")
     return net
 
@@ -112,7 +118,6 @@ def accuracy(net: torch.nn.Module, data: list[tuple[torch.Tensor, int]]) -> floa
         pred = torch.argmax(pred, dim=1)
         correct += torch.sum(exp == pred).item()
     return correct / len(data)
-
 
 
 def main():
@@ -163,7 +168,7 @@ def main():
     thirty_sec_csv_test = thirty_sec_csv_data[int(len(thirty_sec_csv_data)*(2/3)):]
 
     num_linear_layers_csv = 10
-    linear_width_csv = 10
+    linear_width_csv = 20
     in_size_csv = 58 # number of features present in each csv file
     out_size_csv = len(value_to_genre_map) # number of categories to map to
     epochs = 1000
