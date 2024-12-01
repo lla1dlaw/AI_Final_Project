@@ -20,3 +20,19 @@ class Network(nn.Module):
             x = layer(x)
             x = self.activation(x)
         return x
+        
+#alt network ms
+    # def __init__(self, in_size: int, out_size: int):
+    #     super().__init__()
+        # self.linear = [nn.Linear(in_size, 30)]
+        # self.linear = [nn.Linear(30, 3)]
+        # self.linear += [nn.Linear(3, 9)]
+        # self.linear += [nn.Linear(9, out_size)]
+    #     self.linear = nn.ModuleList(self.linear)
+    #     self.activation = nn.ReLU()
+
+    # def forward(self, x):
+    #     for layer in self.linear:
+    #         x = layer(x)
+    #         x = self.activation(x)
+    #     return x
