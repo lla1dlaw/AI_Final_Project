@@ -28,9 +28,6 @@ class Network(nn.Module):
         # self.linear = [nn.Linear(30, 3)]
         # self.linear += [nn.Linear(3, 9)]
         # self.linear += [nn.Linear(9, out_size)]
-    #     self.linear = [nn.Linear(in_size, hidden_size)]
-    #     self.linear.extend([nn.Linear(hidden_size, hidden_size) for i in range(layers)])
-    #     self.linear.append(nn.Linear(hidden_size, out_size))
     #     self.linear = nn.ModuleList(self.linear)
     #     self.activation = nn.ReLU()
 
