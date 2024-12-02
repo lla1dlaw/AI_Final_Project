@@ -1,7 +1,12 @@
-#cnn.py
-#Mario
+# Filename: cnn.py
+# Author: Mario Slaybe
+# Created: 12-02-2024
+# Description: A convolutional network to predict genre of song based on spectrographic models of sound data
 
+
+import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class CNN(nn.Module):
   def __init(self):
@@ -11,12 +16,13 @@ class CNN(nn.Module):
     self.pool1 == nn.MaxPool2d(2,2)
     #if not resized v
     # m = nn.MaxPool2d((2, 2), stride=(2, 1))
-    self.conv2 = nnConv2d(6,12,3)
+    self.conv2 = nn.Conv2d(6,12,3)
     self.pool2 == nn.MaxPool2d(2,2)
     
-    self.conv3 = nnConv2d(12,24,3)
+    self.conv3 = nn.Conv2d(12,24,3)
     self.pool3 == nn.MaxPool2d(2,2)
-    #images 433x288 maybe resize
+
+    #images 432x288 maybe resize
   #TODO: determine if images will be resized before continuing 
     self.fc1 = nn.Linear(x*i*j,y)
     self.fc2 = nn.Linear(y,z)
