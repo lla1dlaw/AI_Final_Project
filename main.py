@@ -115,77 +115,66 @@ def accuracy(net: torch.nn.Module, data: list[tuple[torch.Tensor, int]]) -> floa
 
 
 def main():
-    # output of the nn will be mapped against this dictionary
     value_to_genre_map = {
-        0 : "blues", 
-        1 : "classical", 
-        2 : "country", 
-        3 : "disco", 
-        4 : "hiphop", 
-        5 : "jazz", 
-        6 : "metal", 
-        7 : "pop", 
-        8 : "reggae", 
-        9 : "rock"
+        0: "blues",
+        1: "classical",
+        2: "country",
+        3: "disco",
+        4: "hiphop",
+        5: "jazz",
+        6: "metal",
+        7: "pop",
+        8: "reggae",
+        9: "rock"
     }
 
-    genre_to_value_map = {
-        "blues" : 0, 
-        "classical" : 1, 
-        "country" : 2, 
-        "disco" : 3, 
-        "hiphop" : 4, 
-        "jazz" : 5, 
-        "metal" : 6, 
-        "pop" : 7, 
-        "reggae" : 8, 
-        "rock" : 9
-    }
+    genre_to_value_map = {v: k for k, v in value_to_genre_map.items()}
 
-
-    print("Creating linear network")
-    # gather data
+    print("Loading and preprocessing data")
     three_sec_csv_data = parse_csv_data("./GTZAN/features_3_sec.csv", genre_to_value_map)
-    thirty_sec_csv_data = parse_csv_data("./GTZAN/features_30_sec.csv", genre_to_value_map)
-    
-    # shuffle data
+
+    # Shuffle data
     random.seed(42)
     random.shuffle(three_sec_csv_data)
-    random.shuffle(thirty_sec_csv_data)
     random.seed(time.time())
 
-    # segment traing and test data (2/3 for training, 1/3 for testing)
-    three_sec_csv_training = three_sec_csv_data[:int(len(three_sec_csv_data)*(2/3))]
-    three_sec_csv_test = three_sec_csv_data[int(len(three_sec_csv_data)*(2/3)):]
+    # Split data
+    train_data = three_sec_csv_data[:int(len(three_sec_csv_data) * (2 / 3))]
+    test_data = three_sec_csv_data[int(len(three_sec_csv_data) * (2 / 3)):]
 
-    thirty_sec_csv_training = thirty_sec_csv_data[:int(len(thirty_sec_csv_data)*(2/3))]
-    thirty_sec_csv_test = thirty_sec_csv_data[int(len(thirty_sec_csv_data)*(2/3)):]
+    # Preprocess data for RNN
+    train_data_rnn = rnn_data_prep(train_data)
+    test_data_rnn = rnn_data_prep(test_data)
 
-    num_linear_layers_csv = 10
-    linear_width_csv = 20
-    in_size_csv = 58 # number of features present in each csv file
-    out_size_csv = len(value_to_genre_map) # number of categories to map to
-    epochs = 1000
-    batch_size = 15
+    # Define model parameters
+    input_size = 58  # Adjust based on feature size
+    hidden_size = 128
+    output_size = len(value_to_genre_map)
+    num_layers = 2
+    epochs = 100
+    batch_size = 32
 
-    # generate networks, one trained on 3 second features one trained on 30 second features
-    linear_net_3_sec_csv = Network(num_linear_layers_csv, linear_width_csv, in_size_csv, out_size_csv)
-    linear_net_30_sec_csv = Network(num_linear_layers_csv, linear_width_csv, in_size_csv, out_size_csv)
-    
-    # traing networks
-    print("Traning 3 sec network...")
-    train_network(linear_net_3_sec_csv, three_sec_csv_training, epochs=epochs, batch_size=batch_size)
+    # Define models
+    print("Initializing models")
+    linear_net = Network(layers=10, hidden_size=20, in_size=input_size, out_size=output_size)
+    rnn_net = RNN(input_size=input_size, hidden_size=hidden_size, output_size=output_size, num_layers=num_layers)
 
-    print("Training 30 sec network...")
-    train_network(linear_net_30_sec_csv, thirty_sec_csv_training, epochs=epochs, batch_size=batch_size)
+    # Train linear network
+    print("Training linear network...")
+    train_network(linear_net, train_data, epochs=epochs, batch_size=batch_size)
 
-    # get the accuracy for each network on their test data
-    three_sec_accuracy = accuracy(linear_net_3_sec_csv, three_sec_csv_test)
-    thirty_sec_accuracy = accuracy(linear_net_30_sec_csv, thirty_sec_csv_test)
-    print()
-    print(f"3 second accuracy: {three_sec_accuracy}")
-    print(f"30 second accuracy: {thirty_sec_accuracy}")
+    # Train RNN network
+    print("Training RNN network...")
+    train_network(rnn_net, train_data_rnn, epochs=epochs, batch_size=batch_size)
 
+    # Test models
+    print("Evaluating models")
+    linear_accuracy = accuracy(linear_net, test_data)
+    rnn_accuracy = accuracy(rnn_net, test_data_rnn)
+
+    # Display results
+    print(f"Linear Network accuracy: {linear_accuracy}")
+    print(f"RNN accuracy: {rnn_accuracy}")
 
 if __name__ == '__main__':
     main()
