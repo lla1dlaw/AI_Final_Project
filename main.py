@@ -102,8 +102,7 @@ def accuracy(net: torch.nn.Module, data: list[tuple[torch.Tensor, int]]) -> floa
     """
 
     # ignore file names in each tuple
-    data_no_filenames = [(pair[0], pair[1]) for pair in data]
-
+    data = [(features, label) for features, label, *_ in data]
     loader = DataLoader(data_no_filenames, batch_size=32)
     correct = 0
     for batch in loader:
