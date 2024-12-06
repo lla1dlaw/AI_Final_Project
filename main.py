@@ -67,20 +67,10 @@ def rnn_data_prep(data: list[tuple[torch.Tensor, int]]) -> list[tuple[torch.Tens
         processed_data.append((seq_features, label))
     return processed_data
 
-def train_network(net: torch.nn.Module, data: list[tuple[torch.Tensor, int, str]], epochs: int = 100, batch_size: int = 32) -> torch.nn.Module:
-    """
-    purpose: trains the neural network 
-    param net: the neural network object that is being trained
-    param data: a list of tuples of torch tensors and labels
-    param epochs: the number of iterations through the training data the network will complete
-    param batch_size: the number of items in a data batch 
-    returns: the argued torch neural network module
-    """
-
-    # ignore file names in each tuple
-    data_no_filenames = [(pair[0], pair[1]) for pair in data]
-
-    loader = DataLoader(data_no_filenames, batch_size=batch_size, shuffle=True)
+def train_network(net: torch.nn.Module, data: list[tuple[torch.Tensor, int]], epochs: int, batch_size: int):
+    #training function modified to handle different types of nns
+    data = [(features, label) for features, label, *_ in data]
+    loader = DataLoader(data, batch_size=batch_size, shuffle=True)
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(net.parameters(), lr=0.01)
     scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.9999)
@@ -93,19 +83,15 @@ def train_network(net: torch.nn.Module, data: list[tuple[torch.Tensor, int, str]
             input, target = batch
             pred = net(input)
             loss = loss_fn(pred, target)
-            # perform back propagation
             loss.backward()
             optimizer.step()
-            optimizer.zero_grad() # zero all the weight gradients in preparation for the next batch
-            
-            # Compute global loss
+            optimizer.zero_grad()
+
             global_loss += loss.item()
-            # Compute epoch accuracy
             pred = torch.argmax(pred, dim=1)
             correct += torch.sum(target == pred).item()
             scheduler.step()
-        print(f"epoch: {epoch} -> loss: {round(global_loss, 6)} -> acc: {correct} of {len(data_no_filenames)} -> {round(correct/len(data_no_filenames)*100, 3)}%")
-    return net
+        print(f"epoch: {epoch} -> loss: {round(global_loss, 6)} -> acc: {correct} of {len(data)} -> {round(correct / len(data) * 100, 3)}%")
 
 def accuracy(net: torch.nn.Module, data: list[tuple[torch.Tensor, int]]) -> float:
     """
