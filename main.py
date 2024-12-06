@@ -1,6 +1,6 @@
 # Filename: main.py
-# Author: Liam Laidlaw
-# Created: 11-25-2024
+# Author: Liam Laidlaw & Brandon Rose
+# Updated: 12-06-2024
 # Description: The main driver program for the classifier
 
 import random
@@ -57,6 +57,15 @@ def parse_csv_data(path: str, genre_to_value_map: dict):
         file.close()
     
     return data
+
+def rnn_data_prep(data: list[tuple[torch.Tensor, int]]) -> list[tuple[torch.Tensor, int]]:
+    #converts data into sequence format -> batch, sequence length, feature size
+    #ltsm requires input tensors to be 3D
+    processed_data = []
+    for features, label, *_ in data:
+        seq_features = features.unsqueeze(0) if features.ndim == 1 else features
+        processed_data.append((seq_features, label))
+    return processed_data
 
 def train_network(net: torch.nn.Module, data: list[tuple[torch.Tensor, int, str]], epochs: int = 100, batch_size: int = 32) -> torch.nn.Module:
     """
