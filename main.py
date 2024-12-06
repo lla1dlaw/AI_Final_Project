@@ -12,6 +12,21 @@ from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 from network import Network
 
+# from cnn import CNN
+# import torchvision
+# import torch.optim as optim
+# import torch.nn as nn
+# import torchvision.transforms as transforms
+# from torchvision.datasets import ImageFolder
+
+
+#imagetrain = ImageFolder("images_train", transform=transforms.Compose([transforms.Resize((432, 432)), transforms.ToTensor()]))
+# imagetest = ImageFolder("images_test", transforms.Compose([transforms.Resize((432,432)), transforms.ToTensor()]))
+# classes = imagetrain.classes
+# trainloader = torch.utils.data.DataLoader(imagetrain, batch_size=128,shuffle=True, num_workers=2)
+# testLoader = torch.utils.data.DataLoader(imagetrain, batch_size=128,shuffle=False, num_workers=2)
+# imagenet = CNN()
+# criterion = nn.CrossEntropyLoss()
 
 def parse_wave_data(path: str):
     """
