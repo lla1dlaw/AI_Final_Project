@@ -1,3 +1,4 @@
+# Filename: cnn.py
 # Author: Mario Slaybe
 # Created: 12-02-2024
 # Description: A convolutional network to predict genre of song based on spectrographic models of sound data
@@ -39,7 +40,8 @@ class CNN(nn.Module):
         return x
 
 
-r(hidden_size, hidden_size) for i in range(layers)])
+
+# r(hidden_size, hidden_size) for i in range(layers)])
 #     self.linear.append(nn.Linear(hidden_size, out_size))
 #     self.linear = nn.ModuleList(self.linear)
 #     self.activation = nn.ReLU()
