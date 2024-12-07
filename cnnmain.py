@@ -36,7 +36,7 @@ def train_model(model, trainloader, criterion, optimizer, epochs=10):
         runningLoss = 0.0
         correct = 0
         total = 0
-
+        oldaccuracy = 0
         for inputs, labels in trainloader:
 
             optimizer.zero_grad()
@@ -52,7 +52,12 @@ def train_model(model, trainloader, criterion, optimizer, epochs=10):
 
         epochLoss = runningLoss / len(trainloader)
         accuracy = correct / total * 100
-        print(f"Epoch {epoch + 1}/{epochs}, Loss: {epochLoss:.4f}, Accuracy: {accuracy:.2f}%")
+        print(f"Epoch: {epoch + 1}/{epochs}, Loss: {epochLoss:.4f}, Accuracy: {accuracy:.2f}%")
+        #to not overfit
+        if accuracy >= 95 and oldaccuracy >= accuracy:
+            break
+        oldaccuracy = accuracy
+
 
 
 
@@ -60,11 +65,11 @@ def main():
     transform = transforms.Compose([ transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 
     # load the train and test data
-    imagetrain = ImageFolder("images_train", transform=transform)
-    imagetest = ImageFolder("images_test", transform=transforms)
-    trainloader = torch.utils.data.DataLoader(imagetrain, batch_size=32,shuffle=True, num_workers=2)
-    testLoader = torch.utils.data.DataLoader(imagetrain, batch_size=32,shuffle=False, num_workers=2)
-    classes = imagetrain.classes
+    imageTrain = ImageFolder("images_train", transform=transform)
+    imageTest = ImageFolder("images_test", transform=transforms)
+    trainLoader = torch.utils.data.DataLoader(imageTrain, batch_size=32,shuffle=True, num_workers=2)
+    testLoader = torch.utils.data.DataLoader(imageTest, batch_size=32,shuffle=False, num_workers=2)
+    classes = imageTrain.classes
     numGenres= len(classes)
 
     cnnimageModel = CNN(numGenres)
@@ -73,11 +78,14 @@ def main():
 
 
     #training
-    train_model(cnnimageModel, trainloader, criterion, optimizer,10)
+    train_model(cnnimageModel, trainLoader, criterion, optimizer,25)
 
 
     #eval
     evaluate_model(cnnimageModel, testLoader)
+
+    torch.save(cnnimageModel.state_dict(),"MusicModel")
+
 
 if __name__ == '__main__':
     main()
