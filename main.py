@@ -1,60 +1,22 @@
 # Filename: main.py
 # Author: Liam Laidlaw
 # Created: 11-25-2024
-# Description: The main driver program for the classifier
+# Description: The main driver program for the linear feed forward network music classifier
 
 import random
 import time
 import torch
-
-#import torchaudio
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 from network import Network
 
-# from cnn import CNN
-# import torchvision
-# import torch.optim as optim
-# import torch.nn as nn
-# import torchvision.transforms as transforms
-# from torchvision.datasets import ImageFolder
-
-
-#imagetrain = ImageFolder("images_train", transform=transforms.Compose([transforms.Resize((432, 432)), transforms.ToTensor()]))
-# imagetest = ImageFolder("images_test", transforms.Compose([transforms.Resize((432,432)), transforms.ToTensor()]))
-# classes = imagetrain.classes
-# trainloader = torch.utils.data.DataLoader(imagetrain, batch_size=128,shuffle=True, num_workers=2)
-# testLoader = torch.utils.data.DataLoader(imagetrain, batch_size=128,shuffle=False, num_workers=2)
-# imagenet = CNN()
-# criterion = nn.CrossEntropyLoss()
-
-def parse_wave_data(path: str):
-    """
-    purpose: parses all the audio files in the genres_original directory
-    param path: the path to the .wav file that is being parsed
-    returns: list of tuples -> (tensor, label)
-    note: This function requires all of the default filenames and directories for the GTZAN dataset
-    """
-    genres = ["blues", "classical", "country", "disco", "hiphop", "jazz", "metal", "pop", "reggae", "rock"]
-    data = []
-
-    for genre in genres: 
-        for i in range(100):
-            if i < 10:
-                filename = f"{genre}.0000{i}"
-            else:
-                filename = f"{genre}.000{i}"
-            # append tuple with tensor and genre label
-            #data.append((torchaudio.load(f"{path}/{genre}/{filename}.wav"), genre))
-    return data
-
 
 def parse_csv_data(path: str, genre_to_value_map: dict):
     """
-    purpose: parses all the pre extracted features into tensors 
-    param path: the path to the .csv file that is being parsed
-    returns: list of tuples -> (tensor, label, filename)
-    note: This function requires all of the default filenames and directories for the GTZAN dataset
+    Parses all the pre extracted features into tensors 
+    :param path: the path to the .csv file that is being parsed
+    :returns: list of tuples -> (tensor, label, filename)
+    :note: This function requires all of the default filenames and directories for the GTZAN dataset
     """
     data = []
 
@@ -73,14 +35,15 @@ def parse_csv_data(path: str, genre_to_value_map: dict):
     
     return data
 
+
 def train_network(net: torch.nn.Module, data: list[tuple[torch.Tensor, int, str]], epochs: int = 100, batch_size: int = 32) -> torch.nn.Module:
     """
-    purpose: trains the neural network 
-    param net: the neural network object that is being trained
-    param data: a list of tuples of torch tensors and labels
-    param epochs: the number of iterations through the training data the network will complete
-    param batch_size: the number of items in a data batch 
-    returns: the argued torch neural network module
+    Trains the neural network 
+    :param net: the neural network object that is being trained
+    :param data: a list of tuples of torch tensors and labels
+    :param epochs: the number of iterations through the training data the network will complete
+    :param batch_size: the number of items in a data batch 
+    :returns: the argued torch neural network module
     """
 
     # ignore file names in each tuple
@@ -111,12 +74,13 @@ def train_network(net: torch.nn.Module, data: list[tuple[torch.Tensor, int, str]
         print(f"epoch: {epoch} -> loss: {round(global_loss, 6)} -> acc: {correct} of {len(data_no_filenames)} -> {round(correct/len(data_no_filenames)*100, 3)}%")
     return net
 
+
 def accuracy(net: torch.nn.Module, data: list[tuple[torch.Tensor, int]]) -> float:
     """
-    purpose: calculates the accuracy of a neural network on a given dataset
-    param net: the network that is being tested
-    param data: the dataset used for testing
-    returns: a floating point value as the proportion of correct predictions that the network made
+    Calculates the accuracy of a neural network on a given dataset
+    :param net: the network that is being tested
+    :param data: the dataset used for testing
+    :returns: a floating point value as the proportion of correct predictions that the network made
     """
 
     # ignore file names in each tuple
@@ -134,20 +98,7 @@ def accuracy(net: torch.nn.Module, data: list[tuple[torch.Tensor, int]]) -> floa
 
 
 def main():
-    # output of the nn will be mapped against this dictionary
-    value_to_genre_map = {
-        0 : "blues", 
-        1 : "classical", 
-        2 : "country", 
-        3 : "disco", 
-        4 : "hiphop", 
-        5 : "jazz", 
-        6 : "metal", 
-        7 : "pop", 
-        8 : "reggae", 
-        9 : "rock"
-    }
-
+    # used for mapping labels to values in torch tensors for accuracy calcualtion
     genre_to_value_map = {
         "blues" : 0, 
         "classical" : 1, 
@@ -160,7 +111,6 @@ def main():
         "reggae" : 8, 
         "rock" : 9
     }
-
 
     print("Creating linear network")
     # gather data
@@ -183,14 +133,13 @@ def main():
     num_linear_layers_csv = 8
     linear_width_csv = 5
     in_size_csv = 58 # number of features present in each csv file
-    out_size_csv = len(value_to_genre_map) # number of categories to map to
+    out_size_csv = len(genre_to_value_map) # number of categories to map to
     epochs = 1000
     batch_size = 15
 
     # generate networks, one trained on 3 second features one trained on 30 second features
     linear_nets_3_sec_csv = [Network(num_linear_layers_csv*i, linear_width_csv*i, in_size_csv, out_size_csv) for i in range(1, 4)]
     linear_nets_30_sec_csv = [Network(num_linear_layers_csv*i, linear_width_csv*i, in_size_csv, out_size_csv) for i in range(1, 4)]
-
 
     # train linear networks
     for i, net in enumerate(linear_nets_3_sec_csv):
@@ -202,14 +151,13 @@ def main():
         train_network(net, thirty_sec_csv_training, epochs=epochs, batch_size=batch_size)
 
     # get the accuracy for each network on their test data
-    # parellel lists for the accuracies of each network
-
     # dummy networks
     best_3_sec_network = Network(1, 1, 1, 1)
     best_3_sec_network.accuracy = 0
     best_30_sec_network = Network(1, 1, 1, 1)
     best_30_sec_network.accuracy = 0
 
+    # determine most accurate network
     for net in linear_nets_3_sec_csv:
         net.accuracy = accuracy(net, three_sec_csv_test)
         if net.accuracy > best_3_sec_network.accuracy:
@@ -220,11 +168,11 @@ def main():
         if net.accuracy > best_30_sec_network.accuracy:
             best_30_sec_network = net
 
-
     # print save the model with the best accuracy
     print(f"\nBest 3 second accuracy: {best_3_sec_network.accuracy} -> Num Hidden Layers: {best_3_sec_network.num_layers} -> Hidden Layer Width: {best_3_sec_network.hidden_size}")
     print(f"Best 30 second accuracy: {best_30_sec_network.accuracy} -> Num Hidden Layers: {best_30_sec_network.num_layers} -> Hidden Layer Width: {best_30_sec_network.hidden_size}")
 
+    # save the best networks
     torch.save(best_3_sec_network.state_dict(), "Best_Performing_Networks/best_3_second_net.pth")
     torch.save(best_30_sec_network.state_dict(), "Best_Performing_Networks/best_30_second_net.pth")
 
