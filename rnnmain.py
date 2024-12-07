@@ -7,56 +7,50 @@ import random
 import time
 import torch
 
+import random
+import time
+import torch
 import torchaudio
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 from network import Network
+from rnn import RNN  # Import RNN class
 
 
 def parse_wave_data(path: str):
     """
-    purpose: parses all the audio files in the genres_original directory
-    param path: the path to the .wav file that is being parsed
-    returns: list of tuples -> (tensor, label)
-    note: This function requires all of the default filenames and directories for the GTZAN dataset
+    Parses all the audio files in the genres_original directory.
     """
     genres = ["blues", "classical", "country", "disco", "hiphop", "jazz", "metal", "pop", "reggae", "rock"]
     data = []
 
-    for genre in genres: 
+    for genre in genres:
         for i in range(100):
             if i < 10:
                 filename = f"{genre}.0000{i}"
             else:
                 filename = f"{genre}.000{i}"
-            # append tuple with tensor and genre label
-            #data.append((torchaudio.load(f"{path}/{genre}/{filename}.wav"), genre))
+            # Append tuple with tensor and genre label
+            # data.append((torchaudio.load(f"{path}/{genre}/{filename}.wav"), genre))
     return data
 
 
 def parse_csv_data(path: str, genre_to_value_map: dict):
     """
-    purpose: parses all the pre extracted features into tensors 
-    param path: the path to the .csv file that is being parsed
-    returns: list of tuples -> (tensor, label, filename)
-    note: This function requires all of the default filenames and directories for the GTZAN dataset
+    Parses all the pre-extracted features into tensors.
     """
     data = []
-
     with open(path, "r") as file:
-        file.readline() # scrap the collumn labels
-        for ln in file: 
-            line = file.readline()
+        file.readline()  # Skip the column labels
+        for line in file:
             line = line.strip().split(",")
-            # build tuple
             filename = line[0]
             features = list(map(float, line[1:-1]))
             label = genre_to_value_map[line[-1]]
-            # append tuple to the data list
+            # Append tuple to the data list
             data.append((torch.tensor(features), label, filename))
-        file.close()
-    
     return data
+
 
 def rnn_data_prep(data: list[tuple[torch.Tensor, int]]) -> list[tuple[torch.Tensor, int]]:
     #converts data into sequence format -> batch, sequence length, feature size
@@ -66,6 +60,8 @@ def rnn_data_prep(data: list[tuple[torch.Tensor, int]]) -> list[tuple[torch.Tens
         seq_features = features.unsqueeze(0) if features.ndim == 1 else features
         processed_data.append((seq_features, label))
     return processed_data
+
+
 
 def train_network(net: torch.nn.Module, data: list[tuple[torch.Tensor, int]], epochs: int, batch_size: int):
     #training function modified to handle different types of nns
@@ -93,22 +89,17 @@ def train_network(net: torch.nn.Module, data: list[tuple[torch.Tensor, int]], ep
             scheduler.step()
         print(f"epoch: {epoch} -> loss: {round(global_loss, 6)} -> acc: {correct} of {len(data)} -> {round(correct / len(data) * 100, 3)}%")
 
+
 def accuracy(net: torch.nn.Module, data: list[tuple[torch.Tensor, int]]) -> float:
     """
-    purpose: calculates the accuracy of a neural network on a given dataset
-    param net: the network that is being tested
-    param data: the dataset used for testing
-    returns: a floating point value as the proportion of correct predictions that the network made
+    Calculates the accuracy of a neural network on a given dataset.
     """
-
-    # ignore file names in each tuple
-    data = [(features, label) for features, label, *_ in data]
-    loader = DataLoader(data_no_filenames, batch_size=32)
+    data = [(features, label) for features, label, *_ in data]  # Strip filenames or extra elements
+    loader = DataLoader(data, batch_size=32)
     correct = 0
     for batch in loader:
         inp, exp = batch
         pred = net(inp)
-        # Compute accuracy
         pred = torch.argmax(pred, dim=1)
         correct += torch.sum(exp == pred).item()
     return correct / len(data)
@@ -132,6 +123,7 @@ def main():
 
     print("Loading and preprocessing data")
     three_sec_csv_data = parse_csv_data("./GTZAN/features_3_sec.csv", genre_to_value_map)
+    thirty_sec_csv_fata = parse_csv_data("./GTZAN/features_30_sec.csv", genre_to_value_map)
 
     # Shuffle data
     random.seed(42)
@@ -142,39 +134,52 @@ def main():
     train_data = three_sec_csv_data[:int(len(three_sec_csv_data) * (2 / 3))]
     test_data = three_sec_csv_data[int(len(three_sec_csv_data) * (2 / 3)):]
 
+    train_data_30 = three_sec_csv_data[:int(len(three_sec_csv_data) * (2 / 3))]
+    test_data_30 = three_sec_csv_data[int(len(three_sec_csv_data) * (2 / 3)):]
+
     # Preprocess data for RNN
     train_data_rnn = rnn_data_prep(train_data)
     test_data_rnn = rnn_data_prep(test_data)
 
+    train_data_rnn_30 = rnn_data_prep(train_data_30)
+    test_data_rnn_30 = rnn_data_prep(test_data_30)
+
     # Define model parameters
     input_size = 58  # Adjust based on feature size
-    hidden_size = 128
+    hidden_size = 64
     output_size = len(value_to_genre_map)
     num_layers = 2
-    epochs = 100
+    epochs = 1000
     batch_size = 32
 
     # Define models
     print("Initializing models")
-    linear_net = Network(layers=10, hidden_size=20, in_size=input_size, out_size=output_size)
+    linear_net = Network(layers=10, hidden_size=32, in_size=input_size, out_size=output_size)
     rnn_net = RNN(input_size=input_size, hidden_size=hidden_size, output_size=output_size, num_layers=num_layers)
+    rnn_net_30 = RNN(input_size=input_size, hidden_size=hidden_size, output_size=output_size, num_layers=num_layers)
 
-    # Train linear network
-    print("Training linear network...")
-    train_network(linear_net, train_data, epochs=epochs, batch_size=batch_size)
+    ## Train linear network
+    #print("Training linear network...")
+    #train_network(linear_net, train_data, epochs=epochs, batch_size=batch_size)
 
     # Train RNN network
-    print("Training RNN network...")
+    print("Training RNN network 3 seconds...")
     train_network(rnn_net, train_data_rnn, epochs=epochs, batch_size=batch_size)
+
+    print("Training RNN network 30 seconds...")
+    train_network(rnn_net_30, train_data_rnn_30, epochs=epochs, batch_size=batch_size)
 
     # Test models
     print("Evaluating models")
-    linear_accuracy = accuracy(linear_net, test_data)
+    #linear_accuracy = accuracy(linear_net, test_data)
     rnn_accuracy = accuracy(rnn_net, test_data_rnn)
+    rnn_accuracy_30 = accuracy(rnn_net_30, test_data_rnn_30)
 
     # Display results
-    print(f"Linear Network accuracy: {linear_accuracy}")
-    print(f"RNN accuracy: {rnn_accuracy}")
+    #print(f"Linear Network accuracy: {linear_accuracy}")
+    print(f"RNN accuracy 3secs: {rnn_accuracy}")
+    print(f"RNN accuracy 30secs: {rnn_accuracy_30}")
+
 
 if __name__ == '__main__':
     main()
