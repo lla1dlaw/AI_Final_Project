@@ -15,6 +15,10 @@ class Network(nn.Module):
         self.linear = nn.ModuleList(self.linear)
         self.activation = nn.ReLU()
 
+        self.hidden_size = hidden_size
+        self.num_layers = layers
+        self.accuracy = 0
+
     def forward(self, x):
         for layer in self.linear:
             x = layer(x)

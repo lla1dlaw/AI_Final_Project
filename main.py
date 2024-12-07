@@ -7,7 +7,7 @@ import random
 import time
 import torch
 
-import torchaudio
+#import torchaudio
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 from network import Network
@@ -74,7 +74,6 @@ def train_network(net: torch.nn.Module, data: list[tuple[torch.Tensor, int, str]
     loader = DataLoader(data_no_filenames, batch_size=batch_size, shuffle=True)
     loss_fn = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(net.parameters(), lr=0.01)
-    scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.9999)
 
     net.train()
     for epoch in range(epochs):
@@ -94,7 +93,6 @@ def train_network(net: torch.nn.Module, data: list[tuple[torch.Tensor, int, str]
             # Compute epoch accuracy
             pred = torch.argmax(pred, dim=1)
             correct += torch.sum(target == pred).item()
-            scheduler.step()
         print(f"epoch: {epoch} -> loss: {round(global_loss, 6)} -> acc: {correct} of {len(data_no_filenames)} -> {round(correct/len(data_no_filenames)*100, 3)}%")
     return net
 
@@ -167,30 +165,53 @@ def main():
     thirty_sec_csv_training = thirty_sec_csv_data[:int(len(thirty_sec_csv_data)*(2/3))]
     thirty_sec_csv_test = thirty_sec_csv_data[int(len(thirty_sec_csv_data)*(2/3)):]
 
-    num_linear_layers_csv = 10
-    linear_width_csv = 20
+    num_linear_layers_csv = 8
+    linear_width_csv = 5
     in_size_csv = 58 # number of features present in each csv file
     out_size_csv = len(value_to_genre_map) # number of categories to map to
     epochs = 1000
     batch_size = 15
 
     # generate networks, one trained on 3 second features one trained on 30 second features
-    linear_net_3_sec_csv = Network(num_linear_layers_csv, linear_width_csv, in_size_csv, out_size_csv)
-    linear_net_30_sec_csv = Network(num_linear_layers_csv, linear_width_csv, in_size_csv, out_size_csv)
-    
-    # traing networks
-    print("Traning 3 sec network...")
-    train_network(linear_net_3_sec_csv, three_sec_csv_training, epochs=epochs, batch_size=batch_size)
+    linear_nets_3_sec_csv = [Network(num_linear_layers_csv*i, linear_width_csv*i, in_size_csv, out_size_csv) for i in range(1, 4)]
+    linear_nets_30_sec_csv = [Network(num_linear_layers_csv*i, linear_width_csv*i, in_size_csv, out_size_csv) for i in range(1, 4)]
 
-    print("Training 30 sec network...")
-    train_network(linear_net_30_sec_csv, thirty_sec_csv_training, epochs=epochs, batch_size=batch_size)
+
+    # train linear networks
+    for i, net in enumerate(linear_nets_3_sec_csv):
+        print(f"Training 3 sec network {i+1}")
+        train_network(net, three_sec_csv_training, epochs=epochs, batch_size=batch_size)
+    
+    for i, net in enumerate(linear_nets_30_sec_csv):
+        print(F"Training 30 sec network {i+1}")
+        train_network(net, thirty_sec_csv_training, epochs=epochs, batch_size=batch_size)
 
     # get the accuracy for each network on their test data
-    three_sec_accuracy = accuracy(linear_net_3_sec_csv, three_sec_csv_test)
-    thirty_sec_accuracy = accuracy(linear_net_30_sec_csv, thirty_sec_csv_test)
-    print()
-    print(f"3 second accuracy: {three_sec_accuracy}")
-    print(f"30 second accuracy: {thirty_sec_accuracy}")
+    # parellel lists for the accuracies of each network
+
+    # dummy networks
+    best_3_sec_network = Network(1, 1, 1, 1)
+    best_3_sec_network.accuracy = 0
+    best_30_sec_network = Network(1, 1, 1, 1)
+    best_30_sec_network.accuracy = 0
+
+    for net in linear_nets_3_sec_csv:
+        net.accuracy = accuracy(net, three_sec_csv_test)
+        if net.accuracy > best_3_sec_network.accuracy:
+            best_3_sec_network = net
+    
+    for net in linear_nets_30_sec_csv:
+        net.accuracy = accuracy(net, thirty_sec_csv_test)
+        if net.accuracy > best_30_sec_network.accuracy:
+            best_30_sec_network = net
+
+
+    # print save the model with the best accuracy
+    print(f"\nBest 3 second accuracy: {best_3_sec_network.accuracy} -> Num Hidden Layers: {best_3_sec_network.num_layers} -> Hidden Layer Width: {best_3_sec_network.hidden_size}")
+    print(f"Best 30 second accuracy: {best_30_sec_network.accuracy} -> Num Hidden Layers: {best_30_sec_network.num_layers} -> Hidden Layer Width: {best_30_sec_network.hidden_size}")
+
+    torch.save(best_3_sec_network.state_dict(), "Best_Performing_Networks/best_3_second_net.pth")
+    torch.save(best_30_sec_network.state_dict(), "Best_Performing_Networks/best_30_second_net.pth")
 
 
 if __name__ == '__main__':
