@@ -54,9 +54,9 @@ def train_model(model, trainLoader, criterion, optimizer, epochs=10):
         accuracy = correct / total * 100
         print(f"Epoch: {epoch + 1}/{epochs}, Loss: {epochLoss:.4f}, Accuracy: {accuracy:.2f}%")
         #to not overfit
-        if accuracy >= 95 and oldaccuracy >= accuracy:
-            break
-        oldaccuracy = accuracy
+        # if accuracy >= 95 and oldaccuracy >= accuracy:
+        #     break
+        # oldaccuracy = accuracy
 
 
 
@@ -68,7 +68,7 @@ def main():
     imageTrain = ImageFolder("images_train", transform=transform)
     imageTest = ImageFolder("images_test", transform=transform)
     trainLoader = torch.utils.data.DataLoader(imageTrain, batch_size=32,shuffle=True, num_workers=2)
-    testLoader = torch.utils.data.DataLoader(imageTest, batch_size=32,shuffle=True, num_workers=2)
+    testLoader = torch.utils.data.DataLoader(imageTest, batch_size=32,shuffle=False, num_workers=2)
     classes = imageTrain.classes
     numGenres= len(classes)
 
@@ -84,7 +84,7 @@ def main():
     #eval
     evaluate_model(cnnimageModel, testLoader)
 
-    torch.save(cnnimageModel.state_dict(),"MusicModel")
+    torch.save(cnnimageModel.state_dict(),"MusicModel1")
 
 
 if __name__ == '__main__':
