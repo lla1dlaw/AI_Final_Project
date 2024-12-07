@@ -31,3 +31,4 @@ class RNN(nn.Module):
         out = self.fc(out[:, -1, :])  # Output shape: (batch_size, num_classes)
         return out
 
+
