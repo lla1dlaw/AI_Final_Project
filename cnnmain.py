@@ -29,7 +29,7 @@ def evaluate_model(model, test):
     print(f"Test Accuracy: {accuracy:.2f}%")
 
 
-def train_model(model, trainloader, criterion, optimizer, epochs=10):
+def train_model(model, trainLoader, criterion, optimizer, epochs=10):
     model.train()
 
     for epoch in range(epochs):
@@ -37,7 +37,7 @@ def train_model(model, trainloader, criterion, optimizer, epochs=10):
         correct = 0
         total = 0
         oldaccuracy = 0
-        for inputs, labels in trainloader:
+        for inputs, labels in trainLoader:
 
             optimizer.zero_grad()
             outputs = model(inputs)
@@ -50,7 +50,7 @@ def train_model(model, trainloader, criterion, optimizer, epochs=10):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-        epochLoss = runningLoss / len(trainloader)
+        epochLoss = runningLoss / len(trainLoader)
         accuracy = correct / total * 100
         print(f"Epoch: {epoch + 1}/{epochs}, Loss: {epochLoss:.4f}, Accuracy: {accuracy:.2f}%")
         #to not overfit
@@ -66,9 +66,9 @@ def main():
 
     # load the train and test data
     imageTrain = ImageFolder("images_train", transform=transform)
-    imageTest = ImageFolder("images_test", transform=transforms)
+    imageTest = ImageFolder("images_test", transform=transform)
     trainLoader = torch.utils.data.DataLoader(imageTrain, batch_size=32,shuffle=True, num_workers=2)
-    testLoader = torch.utils.data.DataLoader(imageTest, batch_size=32,shuffle=False, num_workers=2)
+    testLoader = torch.utils.data.DataLoader(imageTest, batch_size=32,shuffle=True, num_workers=2)
     classes = imageTrain.classes
     numGenres= len(classes)
 
